@@ -41,6 +41,9 @@ class Button:
 class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
+        self.start_time = time.time()  # Add start time for win condition
+        self.WIN_TIME = 20  # Time in seconds to win
+        self.won = False  # Add win state
         
         # Load default room backgrounds
         self.default_backgrounds = []
@@ -112,12 +115,14 @@ class Game:
         self.current_room = 0
         self.game_over = False
         self.game_over_cause = None
+        self.won = False
+        self.start_time = time.time()  # Reset start time
         self.baby_event = BabyEvent()
         self.player_event = PlayerEvent()
         self.update_button_states()
         
     def handle_click(self, pos):
-        if self.game_over:
+        if self.game_over or self.won:  # Check for both game over and win states
             if self.retry_button.is_clicked(pos):
                 self.reset_game()
             return
@@ -150,6 +155,36 @@ class Game:
         return self.default_backgrounds[self.current_room]
             
     def draw(self, surface):
+        # Check for win condition
+        if not self.game_over and not self.won and (time.time() - self.start_time) >= self.WIN_TIME:
+            self.won = True
+        
+        if self.won:
+            # Draw the current background
+            surface.blit(self.get_current_background(), (0, 0))
+            
+            # Draw semi-transparent gray overlay strip in the middle
+            overlay_height = 150
+            overlay_y = (WINDOW_HEIGHT - overlay_height) // 2
+            overlay = pygame.Surface((WINDOW_WIDTH, overlay_height), pygame.SRCALPHA)
+            overlay.fill((100, 100, 100, 128))
+            surface.blit(overlay, (0, overlay_y))
+            
+            # Draw winner text in two lines with yellow color
+            font_bold = pygame.font.Font(None, 72)
+            font_italic = pygame.font.Font(None, 48)
+            
+            # First line: "WINNER!"
+            text1 = font_bold.render("WINNER!", True, (255, 255, 0))  # Yellow color
+            text1_rect = text1.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 - 30))
+            
+            # Draw both text lines
+            surface.blit(text1, text1_rect)
+            
+            # Draw retry button
+            self.retry_button.draw(surface)
+            return
+            
         if self.game_over:
             # Keep the room background
             surface.blit(self.get_current_background(), (0, 0))
