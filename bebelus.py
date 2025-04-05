@@ -42,20 +42,40 @@ class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
         
-        # Load room backgrounds
-        self.room_backgrounds = []
-        room_images = ["baie.png", "bucatarie.png", "dormitor.png", "living.PNG"]
-        for img_name in room_images:
+        # Load default room backgrounds
+        self.default_backgrounds = []
+        self.event_backgrounds = {}
+        
+        # Load default backgrounds
+        default_images = ["baie.png", "bucatarie.png", "dormitor.png", "living.PNG"]
+        for img_name in default_images:
             try:
                 img = pygame.image.load(os.path.join("HACK", img_name))
                 # Scale image to fit the full screen
                 img = pygame.transform.scale(img, (WINDOW_WIDTH, WINDOW_HEIGHT))
-                self.room_backgrounds.append(img)
+                self.default_backgrounds.append(img)
             except:
                 print(f"Warning: Could not load image {img_name}")
                 # Fallback to white background if image fails to load
-                self.room_backgrounds.append(pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT)))
-                self.room_backgrounds[-1].fill(WHITE)
+                self.default_backgrounds.append(pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT)))
+                self.default_backgrounds[-1].fill(WHITE)
+        
+        # Load event-specific backgrounds
+        event_images = {
+            "Wash Dishes": ("bucatarie_vase.png", 1),
+            "Wash Toielet": ("baie_murdara.png", 0),
+            "Make Bed": ("pat_dezordonat.png", 2),
+            "Fix Lightbulb": ("lampa_sparta.png", 3)
+        }
+        
+        for event_name, (img_name, room_id) in event_images.items():
+            try:
+                img = pygame.image.load(os.path.join("HACK", img_name))
+                img = pygame.transform.scale(img, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.event_backgrounds[event_name] = img
+            except:
+                print(f"Warning: Could not load event image {img_name}")
+                self.event_backgrounds[event_name] = self.default_backgrounds[room_id]
         
         self.game_over = False
         self.game_over_cause = None  # "baby" or "task"
@@ -86,7 +106,7 @@ class Game:
         # Left button is disabled in first room
         self.left_button.set_enabled(self.current_room > 0)
         # Right button is disabled in last room
-        self.right_button.set_enabled(self.current_room < len(self.room_backgrounds) - 1)
+        self.right_button.set_enabled(self.current_room < len(self.default_backgrounds) - 1)
         
     def reset_game(self):
         self.current_room = 0
@@ -117,14 +137,22 @@ class Game:
             self.update_button_states()
             
     def move_right(self):
-        if self.current_room < len(self.room_backgrounds) - 1:  # Only move if not in last room
+        if self.current_room < len(self.default_backgrounds) - 1:  # Only move if not in last room
             self.current_room += 1
             self.update_button_states()
+            
+    def get_current_background(self):
+        # If there's an active event and we're in the room where it's happening
+        if (self.player_event.active and 
+            self.player_event.room == self.current_room and 
+            self.player_event.name in self.event_backgrounds):
+            return self.event_backgrounds[self.player_event.name]
+        return self.default_backgrounds[self.current_room]
             
     def draw(self, surface):
         if self.game_over:
             # Keep the room background
-            surface.blit(self.room_backgrounds[self.current_room], (0, 0))
+            surface.blit(self.get_current_background(), (0, 0))
             
             # Draw semi-transparent gray overlay strip in the middle
             overlay_height = 150  # Height of the overlay strip
@@ -159,7 +187,7 @@ class Game:
             return
             
         # Draw room background
-        surface.blit(self.room_backgrounds[self.current_room], (0, 0))
+        surface.blit(self.get_current_background(), (0, 0))
         
         # Draw navigation buttons
         self.left_button.draw(surface)

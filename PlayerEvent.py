@@ -63,7 +63,7 @@ class PlayerEvent:
             
     def draw_current_event_name(self, surface):
         # Create a semi-transparent background for the text
-        text_bg = pygame.Surface((500, 60), pygame.SRCALPHA)  # Increased size
+        text_bg = pygame.Surface((600, 60), pygame.SRCALPHA)  # Increased size
         text_bg.fill((0, 0, 0, 128))  # Black with 50% opacity
         
         # Draw the background
