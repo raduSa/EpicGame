@@ -42,7 +42,7 @@ class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
         self.start_time = time.time()  # Add start time for win condition
-        self.WIN_TIME = 20  # Time in seconds to win
+        self.WIN_TIME = 60  # Time in seconds to win
         self.won = False  # Add win state
         
         # Load default room backgrounds

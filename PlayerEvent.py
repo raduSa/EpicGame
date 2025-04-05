@@ -9,28 +9,28 @@ PREDEFINED_EVENTS = [
         "room": 1,  # Kitchen
         "x": WINDOW_WIDTH * (0.3),
         "y": WINDOW_HEIGHT * (7/12),
-        "radius": CIRCLE_RADIUS
+        "radius": CIRCLE_RADIUS * 3
     },
     {
         "name": "Wash Toielet",
         "room": 0,  # Bathroom
         "x": WINDOW_WIDTH * (5/12),
         "y": WINDOW_HEIGHT * (4/6),
-        "radius": CIRCLE_RADIUS
+        "radius": CIRCLE_RADIUS * 3
     },
     {
         "name": "Make Bed",
         "room": 2,  # Bedroom
         "x": WINDOW_WIDTH * (1/2),
         "y": WINDOW_HEIGHT * (4/6),
-        "radius": CIRCLE_RADIUS * 1.2  # Slightly larger button
+        "radius": CIRCLE_RADIUS * 4  # Slightly larger button
     },
     {
         "name": "Fix Lightbulb",
         "room": 3,  # Living Room
-        "x": WINDOW_WIDTH * (0.45),
+        "x": WINDOW_WIDTH * (0.43),
         "y": WINDOW_HEIGHT * (1/6),
-        "radius": CIRCLE_RADIUS
+        "radius": CIRCLE_RADIUS * 3
     }
 ]
 
