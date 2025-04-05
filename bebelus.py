@@ -11,6 +11,68 @@ from PlayerEvent import *
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("Room Navigation Game")
 
+class StartScreen:
+    def __init__(self):
+        # Load and blur background
+        try:
+            self.bg = pygame.image.load(os.path.join("HACK", "living.PNG"))
+            self.bg = pygame.transform.scale(self.bg, (WINDOW_WIDTH, WINDOW_HEIGHT))
+            # Create stronger blur effect by scaling down more
+            small_surf = pygame.transform.scale(self.bg, (WINDOW_WIDTH // 8, WINDOW_HEIGHT // 8))  # Scaled to 1/8 instead of 1/4
+            # Apply blur twice for stronger effect
+            medium_surf = pygame.transform.scale(small_surf, (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+            self.bg = pygame.transform.scale(medium_surf, (WINDOW_WIDTH, WINDOW_HEIGHT))
+        except:
+            self.bg = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.bg.fill(WHITE)
+            
+        # Create start button
+        button_width = 200
+        button_height = 60
+        button_x = (WINDOW_WIDTH - button_width) // 2
+        button_y = WINDOW_HEIGHT - button_height - 50
+        self.start_button = Button(button_x, button_y, button_width, button_height, "Start Game")
+        
+        # Prepare text
+        self.title_font = pygame.font.Font(None, 72)
+        self.text_font = pygame.font.Font(None, 45)
+        
+        self.title = self.title_font.render("Baby Hazard", True, WHITE)
+        self.title_rect = self.title.get_rect(center=(WINDOW_WIDTH//2, 100))
+        
+        # Instructions text
+        self.instructions = [
+            "Keep the baby safe and the house clean",
+            "Click to interact with the environment",
+            "Use arrow keys or buttons to move between rooms",
+            "Press ESC to exit the game",
+            "",
+            "Good luck!"
+        ]
+        
+    def draw(self, surface):
+        # Draw blurred background
+        surface.blit(self.bg, (0, 0))
+        
+        # Draw semi-transparent overlay
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 128))  # Dark overlay with 50% opacity
+        surface.blit(overlay, (0, 0))
+        
+        # Draw title
+        surface.blit(self.title, self.title_rect)
+        
+        # Draw instructions
+        for i, line in enumerate(self.instructions):
+            text = self.text_font.render(line, True, WHITE)
+            rect = text.get_rect(center=(WINDOW_WIDTH//2, 250 + i * 50))
+            surface.blit(text, rect)
+        
+        # Draw start button
+        self.start_button.draw(surface)
+        
+    def handle_click(self, pos):
+        return self.start_button.is_clicked(pos)
 
 class Button:
     def __init__(self, x, y, width, height, text):
@@ -320,7 +382,10 @@ class Game:
             self.game_over_cause = "task"
 
 def main():
-    game = Game()
+    # Create start screen
+    start_screen = StartScreen()
+    game = None
+    game_started = False
     clock = pygame.time.Clock()
     
     while True:
@@ -332,16 +397,24 @@ def main():
                 if event.key == pygame.K_ESCAPE:  # Handle ESCAPE key
                     pygame.quit()
                     sys.exit()
-                elif event.key == pygame.K_LEFT:
+                elif game_started and event.key == pygame.K_LEFT:
                     game.move_left()
-                elif event.key == pygame.K_RIGHT:
+                elif game_started and event.key == pygame.K_RIGHT:
                     game.move_right()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left click
-                    game.handle_click(event.pos)
+                    if not game_started:
+                        if start_screen.handle_click(event.pos):
+                            game_started = True
+                            game = Game()  # Initialize game only when starting
+                    else:
+                        game.handle_click(event.pos)
         
         # Draw everything
-        game.draw(screen)
+        if game_started:
+            game.draw(screen)
+        else:
+            start_screen.draw(screen)
         
         # Update display
         pygame.display.flip()
