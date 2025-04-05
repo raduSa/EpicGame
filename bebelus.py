@@ -3,131 +3,14 @@ import sys
 import random
 import time
 import os
-
-# Initialize Pygame
-pygame.init()
-
-# Constants
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
-BUTTON_WIDTH = 100
-BUTTON_HEIGHT = 50
-BUTTON_MARGIN = 20
-CIRCLE_RADIUS = 30
-PROGRESS_BAR_HEIGHT = 10
-PROGRESS_BAR_WIDTH = 60
-PLAYER_EVENT_CLICKS_REQUIRED = 10
-PLAYER_EVENT_TIMEOUT = 15  # seconds
-PLAYER_EVENT_GRACE_PERIOD = 5  # seconds
-
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 100, 100)    # Room 1
-BLUE = (100, 100, 255)   # Room 2
-GREEN = (100, 255, 100)  # Room 3
-PURPLE = (200, 100, 255) # Room 4
-GRAY = (150, 150, 150)   # Button color
-YELLOW = (255, 255, 0)   # Event circle color
-PROGRESS_BAR_COLOR = (0, 255, 0)  # Green for progress
+from constants import *
+from BabyEvent import *
+from PlayerEvent import *
 
 # Set up display
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("Room Navigation Game")
 
-class BabyEvent:
-    def __init__(self):
-        self.reset()
-        
-    def reset(self):
-        self.active = False
-        self.room = random.randint(0, 3)
-        self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
-        self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
-        self.next_spawn_time = time.time() + random.uniform(2, 5)  # Spawn between 2-5 seconds
-        self.active_time = None
-        
-    def update(self):
-        current_time = time.time()
-        if not self.active and current_time >= self.next_spawn_time:
-            self.active = True
-            self.active_time = current_time
-            
-    def draw(self, surface, current_room):
-        if self.active and self.room == current_room:
-            pygame.draw.circle(surface, YELLOW, (self.x, self.y), CIRCLE_RADIUS)
-            pygame.draw.circle(surface, BLACK, (self.x, self.y), CIRCLE_RADIUS, 2)  # Border
-            
-    def is_clicked(self, pos, current_room):
-        if not self.active or self.room != current_room:
-            return False
-        distance = ((pos[0] - self.x) ** 2 + (pos[1] - self.y) ** 2) ** 0.5
-        if distance <= CIRCLE_RADIUS:
-            self.reset()
-            return True
-        return False
-        
-    def check_timeout(self):
-        if self.active and time.time() - self.active_time > 5:  # 5 seconds timeout
-            return True
-        return False
-
-class PlayerEvent:
-    def __init__(self):
-        self.reset()
-        
-    def reset(self):
-        self.active = False
-        self.room = random.randint(0, 3)
-        self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
-        self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
-        self.next_spawn_time = time.time() + random.uniform(2, 5)
-        self.active_time = None
-        self.clicks = 0
-        self.completed = False
-        self.grace_period_end = None
-        
-    def update(self):
-        current_time = time.time()
-        if not self.active and not self.completed and current_time >= self.next_spawn_time:
-            self.active = True
-            self.active_time = current_time
-        elif self.completed and current_time >= self.grace_period_end:
-            self.reset()
-            
-    def draw(self, surface, current_room):
-        if self.active and self.room == current_room:
-            # Draw the black circle
-            pygame.draw.circle(surface, BLACK, (self.x, self.y), CIRCLE_RADIUS)
-            
-            # Draw progress bar above the circle
-            progress_width = (self.clicks / PLAYER_EVENT_CLICKS_REQUIRED) * PROGRESS_BAR_WIDTH
-            progress_rect = pygame.Rect(
-                self.x - PROGRESS_BAR_WIDTH//2,
-                self.y - CIRCLE_RADIUS - PROGRESS_BAR_HEIGHT - 5,
-                progress_width,
-                PROGRESS_BAR_HEIGHT
-            )
-            pygame.draw.rect(surface, PROGRESS_BAR_COLOR, progress_rect)
-            pygame.draw.rect(surface, BLACK, progress_rect, 1)  # Border
-            
-    def is_clicked(self, pos, current_room):
-        if not self.active or self.room != current_room:
-            return False
-        distance = ((pos[0] - self.x) ** 2 + (pos[1] - self.y) ** 2) ** 0.5
-        if distance <= CIRCLE_RADIUS:
-            self.clicks += 1
-            if self.clicks >= PLAYER_EVENT_CLICKS_REQUIRED:
-                self.completed = True
-                self.active = False
-                self.grace_period_end = time.time() + PLAYER_EVENT_GRACE_PERIOD
-            return True
-        return False
-        
-    def check_timeout(self):
-        if self.active and time.time() - self.active_time > PLAYER_EVENT_TIMEOUT:
-            return True
-        return False
 
 class Button:
     def __init__(self, x, y, width, height, text):
@@ -165,7 +48,7 @@ class Game:
         for img_name in room_images:
             try:
                 img = pygame.image.load(os.path.join("HACK", img_name))
-                # Scale image to fit the window
+                # Scale image to fit the full screen
                 img = pygame.transform.scale(img, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.room_backgrounds.append(img)
             except:
@@ -306,14 +189,17 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left click
-                    game.handle_click(event.pos)
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_ESCAPE:  # Handle ESCAPE key
+                    pygame.quit()
+                    sys.exit()
+                elif event.key == pygame.K_LEFT:
                     game.move_left()
                 elif event.key == pygame.K_RIGHT:
                     game.move_right()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left click
+                    game.handle_click(event.pos)
         
         # Draw everything
         game.draw(screen)

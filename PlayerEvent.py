@@ -1,0 +1,60 @@
+from constants import *
+import random
+import time
+
+class PlayerEvent:
+    def __init__(self):
+        self.reset()
+        
+    def reset(self):
+        self.active = False
+        self.room = random.randint(0, 3)
+        self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
+        self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
+        self.next_spawn_time = time.time() + random.uniform(2, 5)
+        self.active_time = None
+        self.clicks = 0
+        self.completed = False
+        self.grace_period_end = None
+        
+    def update(self):
+        current_time = time.time()
+        if not self.active and not self.completed and current_time >= self.next_spawn_time:
+            self.active = True
+            self.active_time = current_time
+        elif self.completed and current_time >= self.grace_period_end:
+            self.reset()
+            
+    def draw(self, surface, current_room):
+        if self.active and self.room == current_room:
+            # Draw the black circle
+            pygame.draw.circle(surface, BLACK, (self.x, self.y), CIRCLE_RADIUS)
+            
+            # Draw progress bar above the circle
+            progress_width = (self.clicks / PLAYER_EVENT_CLICKS_REQUIRED) * PROGRESS_BAR_WIDTH
+            progress_rect = pygame.Rect(
+                self.x - PROGRESS_BAR_WIDTH//2,
+                self.y - CIRCLE_RADIUS - PROGRESS_BAR_HEIGHT - 5,
+                progress_width,
+                PROGRESS_BAR_HEIGHT
+            )
+            pygame.draw.rect(surface, PROGRESS_BAR_COLOR, progress_rect)
+            pygame.draw.rect(surface, BLACK, progress_rect, 1)  # Border
+            
+    def is_clicked(self, pos, current_room):
+        if not self.active or self.room != current_room:
+            return False
+        distance = ((pos[0] - self.x) ** 2 + (pos[1] - self.y) ** 2) ** 0.5
+        if distance <= CIRCLE_RADIUS:
+            self.clicks += 1
+            if self.clicks >= PLAYER_EVENT_CLICKS_REQUIRED:
+                self.completed = True
+                self.active = False
+                self.grace_period_end = time.time() + PLAYER_EVENT_GRACE_PERIOD
+            return True
+        return False
+        
+    def check_timeout(self):
+        if self.active and time.time() - self.active_time > PLAYER_EVENT_TIMEOUT:
+            return True
+        return False
