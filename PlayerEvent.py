@@ -87,10 +87,7 @@ class PlayerEvent:
         # Draw the current event name in the top right corner
         self.draw_current_event_name(surface)
         
-        if self.active and self.room == current_room:
-            # Draw the black circle
-            pygame.draw.circle(surface, BLACK, (self.x, self.y), self.radius)
-            
+        if self.active and self.room == current_room:            
             # Draw progress bar above the circle
             progress_width = (self.clicks / PLAYER_EVENT_CLICKS_REQUIRED) * PROGRESS_BAR_WIDTH
             progress_rect = pygame.Rect(
@@ -101,12 +98,7 @@ class PlayerEvent:
             )
             pygame.draw.rect(surface, PROGRESS_BAR_COLOR, progress_rect)
             pygame.draw.rect(surface, BLACK, progress_rect, 1)  # Border
-            
-            # Draw the event name above the progress bar
-            font = pygame.font.Font(None, 24)
-            text = font.render(self.name, True, BLACK)
-            text_rect = text.get_rect(center=(self.x, self.y - self.radius - PROGRESS_BAR_HEIGHT - 20))
-            surface.blit(text, text_rect)
+                
             
     def is_clicked(self, pos, current_room):
         if not self.active or self.room != current_room:
