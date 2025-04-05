@@ -45,10 +45,43 @@ class Game:
         self.WIN_TIME = 100  # Time in seconds to win
         self.won = False  # Add win state
         
-        # Load default room backgrounds
+        # Initialize empty containers for backgrounds
         self.default_backgrounds = []
         self.event_backgrounds = {}
         self.haunted_changes_applied = {20: False, 40: False, 60: False, 80: False}
+        
+        # Load all background textures
+        self.load_background_textures()
+        
+        self.game_over = False
+        self.game_over_cause = None  # "baby" or "task"
+        
+        # Create navigation buttons
+        left_x = BUTTON_MARGIN
+        right_x = WINDOW_WIDTH - BUTTON_WIDTH - BUTTON_MARGIN
+        button_y = WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN
+        
+        self.left_button = Button(left_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT, "Left")
+        self.right_button = Button(right_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT, "Right")
+        
+        # Create retry button
+        retry_width = 150
+        retry_height = 50
+        retry_x = (WINDOW_WIDTH - retry_width) // 2
+        retry_y = WINDOW_HEIGHT - retry_height - BUTTON_MARGIN
+        self.retry_button = Button(retry_x, retry_y, retry_width, retry_height, "Retry")
+        
+        # Create events
+        self.baby_event = BabyEvent()
+        self.player_event = PlayerEvent()
+        
+        # Update button states initially
+        self.update_button_states()
+        
+    def load_background_textures(self):
+        # Clear existing backgrounds
+        self.default_backgrounds = []
+        self.event_backgrounds = {}
         
         # Load default backgrounds
         default_images = ["baie.png", "bucatarie.png", "dormitor.png", "living.PNG"]
@@ -80,32 +113,7 @@ class Game:
             except:
                 print(f"Warning: Could not load event image {img_name}")
                 self.event_backgrounds[event_name] = self.default_backgrounds[room_id]
-        
-        self.game_over = False
-        self.game_over_cause = None  # "baby" or "task"
-        
-        # Create navigation buttons
-        left_x = BUTTON_MARGIN
-        right_x = WINDOW_WIDTH - BUTTON_WIDTH - BUTTON_MARGIN
-        button_y = WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN
-        
-        self.left_button = Button(left_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT, "Left")
-        self.right_button = Button(right_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT, "Right")
-        
-        # Create retry button
-        retry_width = 150
-        retry_height = 50
-        retry_x = (WINDOW_WIDTH - retry_width) // 2
-        retry_y = WINDOW_HEIGHT - retry_height - BUTTON_MARGIN
-        self.retry_button = Button(retry_x, retry_y, retry_width, retry_height, "Retry")
-        
-        # Create events
-        self.baby_event = BabyEvent()
-        self.player_event = PlayerEvent()
-        
-        # Update button states initially
-        self.update_button_states()
-        
+                
     def update_button_states(self):
         # Left button is disabled in first room
         self.left_button.set_enabled(self.current_room > 0)
@@ -180,6 +188,8 @@ class Game:
         self.won = False
         self.start_time = time.time()
         self.haunted_changes_applied = {20: False, 40: False, 60: False, 80: False}
+        # Reload all background textures to their original state
+        self.load_background_textures()
         self.baby_event = BabyEvent()
         self.player_event = PlayerEvent()
         self.update_button_states()

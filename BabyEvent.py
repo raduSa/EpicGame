@@ -23,7 +23,7 @@ class BabyEvent:
             },
             2: {  # Bedroom
                 (int(WINDOW_WIDTH * 0.1), int(WINDOW_HEIGHT * 0.5)): "bebe_geam.png",
-                (int(WINDOW_WIDTH * 0.3), int(WINDOW_HEIGHT * 0.87)): "bebe_fantoma.png"
+                (int(WINDOW_WIDTH * 0.3), int(WINDOW_HEIGHT * 0.8)): "bebe_fantoma.png"
             },
             3: {  # Living Room
                 (int(WINDOW_WIDTH * 0.9), int(WINDOW_HEIGHT * 0.75)): "bebe_priza.png"
@@ -53,7 +53,7 @@ class BabyEvent:
             1: [(int(WINDOW_WIDTH * 0.45), int(WINDOW_HEIGHT * 0.4)),
                 (int(WINDOW_WIDTH * 0.7), int(WINDOW_HEIGHT * 0.45))],
             2: [(int(WINDOW_WIDTH * 0.1), int(WINDOW_HEIGHT * 0.5)),
-                (int(WINDOW_WIDTH * 0.3), int(WINDOW_HEIGHT * 0.87))],
+                (int(WINDOW_WIDTH * 0.3), int(WINDOW_HEIGHT * 0.8))],
             3: [(int(WINDOW_WIDTH * 0.9), int(WINDOW_HEIGHT * 0.75))]
         }
         
