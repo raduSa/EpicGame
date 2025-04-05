@@ -42,12 +42,13 @@ class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
         self.start_time = time.time()  # Add start time for win condition
-        self.WIN_TIME = 60  # Time in seconds to win
+        self.WIN_TIME = 100  # Time in seconds to win
         self.won = False  # Add win state
         
         # Load default room backgrounds
         self.default_backgrounds = []
         self.event_backgrounds = {}
+        self.haunted_changes_applied = {20: False, 40: False, 60: False, 80: False}
         
         # Load default backgrounds
         default_images = ["baie.png", "bucatarie.png", "dormitor.png", "living.PNG"]
@@ -111,12 +112,74 @@ class Game:
         # Right button is disabled in last room
         self.right_button.set_enabled(self.current_room < len(self.default_backgrounds) - 1)
         
+    def update_haunted_textures(self):
+        current_time = time.time() - self.start_time
+        
+        # At 20 seconds - Bedroom becomes haunted
+        if current_time >= 20 and not self.haunted_changes_applied[20]:
+            try:
+                # Update default background
+                haunted_bg = pygame.image.load(os.path.join("HACK", "dormitor_haunted.png"))
+                haunted_bg = pygame.transform.scale(haunted_bg, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.default_backgrounds[2] = haunted_bg  # Index 2 is bedroom
+                
+                # Update event background
+                haunted_event = pygame.image.load(os.path.join("HACK", "pat_dezordonat_haunted.png"))
+                haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.event_backgrounds["Make Bed"] = haunted_event
+            except Exception as e:
+                print(f"Warning: Could not load haunted bedroom textures: {e}")
+            self.haunted_changes_applied[20] = True
+            
+        # At 40 seconds - Kitchen becomes haunted
+        if current_time >= 40 and not self.haunted_changes_applied[40]:
+            try:
+                haunted_bg = pygame.image.load(os.path.join("HACK", "bucatarie_haunted.png"))
+                haunted_bg = pygame.transform.scale(haunted_bg, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.default_backgrounds[1] = haunted_bg  # Index 1 is kitchen
+                
+                haunted_event = pygame.image.load(os.path.join("HACK", "bucatarie_vase_haunted.png"))
+                haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.event_backgrounds["Wash Dishes"] = haunted_event
+            except Exception as e:
+                print(f"Warning: Could not load haunted kitchen textures: {e}")
+            self.haunted_changes_applied[40] = True
+            
+        # At 60 seconds - Living room becomes haunted
+        if current_time >= 60 and not self.haunted_changes_applied[60]:
+            try:
+                haunted_bg = pygame.image.load(os.path.join("HACK", "living_haunted.png"))
+                haunted_bg = pygame.transform.scale(haunted_bg, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.default_backgrounds[3] = haunted_bg  # Index 3 is living room
+                
+                haunted_event = pygame.image.load(os.path.join("HACK", "lampa_sparta_haunted.png"))
+                haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.event_backgrounds["Fix Lightbulb"] = haunted_event
+            except Exception as e:
+                print(f"Warning: Could not load haunted living room textures: {e}")
+            self.haunted_changes_applied[60] = True
+            
+        # At 80 seconds - Bathroom becomes haunted
+        if current_time >= 80 and not self.haunted_changes_applied[80]:
+            try:
+                haunted_bg = pygame.image.load(os.path.join("HACK", "baie_haunted.png"))
+                haunted_bg = pygame.transform.scale(haunted_bg, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.default_backgrounds[0] = haunted_bg  # Index 0 is bathroom
+                
+                haunted_event = pygame.image.load(os.path.join("HACK", "baie_murdara_haunted.png"))
+                haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.event_backgrounds["Wash Toielet"] = haunted_event
+            except Exception as e:
+                print(f"Warning: Could not load haunted bathroom textures: {e}")
+            self.haunted_changes_applied[80] = True
+                
     def reset_game(self):
         self.current_room = 0
         self.game_over = False
         self.game_over_cause = None
         self.won = False
-        self.start_time = time.time()  # Reset start time
+        self.start_time = time.time()
+        self.haunted_changes_applied = {20: False, 40: False, 60: False, 80: False}
         self.baby_event = BabyEvent()
         self.player_event = PlayerEvent()
         self.update_button_states()
@@ -155,6 +218,9 @@ class Game:
         return self.default_backgrounds[self.current_room]
             
     def draw(self, surface):
+        # Update haunted textures based on time
+        self.update_haunted_textures()
+        
         # Check for win condition
         if not self.game_over and not self.won and (time.time() - self.start_time) >= self.WIN_TIME:
             self.won = True
