@@ -1,4 +1,6 @@
 import pygame
+import cv2
+import numpy as np
 import sys
 import random
 import time
@@ -104,8 +106,41 @@ class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
         self.start_time = time.time()  # Add start time for win condition
-        self.WIN_TIME = 100  # Time in seconds to win
+        self.WIN_TIME = 10  # Time in seconds to win
         self.won = False  # Add win state
+        self.victory_video = None
+        self.video_rect = None
+        self.last_frame = None
+        self.frame_time = 0
+        self.victory_sound_played = False  # Track if victory sound has been played
+        
+        try:
+            # Initialize video capture
+            self.victory_video = cv2.VideoCapture(os.path.join("HACK", "scary_final.mp4"))
+            # Calculate video size (half of screen width)
+            video_width = WINDOW_WIDTH // 2
+            video_height = int(video_width * (9/16))
+            self.video_dimensions = (video_width, video_height)
+            # Center the video
+            self.video_rect = pygame.Rect(
+                (WINDOW_WIDTH - video_width) // 2,
+                (WINDOW_HEIGHT - video_height) // 2,
+                video_width,
+                video_height
+            )
+            # Get video FPS
+            self.video_fps = self.victory_video.get(cv2.CAP_PROP_FPS)
+            self.frame_delay = 1.0 / self.video_fps
+        except Exception as e:
+            print(f"Warning: Could not load victory video: {e}")
+            self.victory_video = None
+            
+        try:
+            # Load victory sound
+            self.victory_sound = pygame.mixer.Sound(os.path.join("HACK", "sunet", "death.wav"))
+        except Exception as e:
+            print(f"Warning: Could not load victory sound: {e}")
+            self.victory_sound = None
         
         # Initialize empty containers for backgrounds
         self.default_backgrounds = []
@@ -139,6 +174,31 @@ class Game:
         
         # Update button states initially
         self.update_button_states()
+        
+    def get_video_frame(self):
+        if not self.victory_video:
+            return None
+            
+        current_time = time.time()
+        if self.last_frame is None or (current_time - self.frame_time) >= self.frame_delay:
+            ret, frame = self.victory_video.read()
+            if not ret:
+                # Video ended, close the game
+                pygame.quit()
+                sys.exit()
+                    
+            # Convert frame from BGR to RGB and resize
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, self.video_dimensions)
+            
+            # Convert to pygame surface
+            frame = np.rot90(frame)
+            frame = pygame.surfarray.make_surface(frame)
+            
+            self.last_frame = frame
+            self.frame_time = current_time
+            
+        return self.last_frame
         
     def load_background_textures(self):
         # Clear existing backgrounds
@@ -248,8 +308,14 @@ class Game:
         self.game_over = False
         self.game_over_cause = None
         self.won = False
+        self.victory_sound_played = False
         self.start_time = time.time()
         self.haunted_changes_applied = {20: False, 40: False, 60: False, 80: False}
+        self.last_frame = None
+        self.frame_time = 0
+        # Reset video to start
+        if self.victory_video:
+            self.victory_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
         # Reload all background textures to their original state
         self.load_background_textures()
         self.baby_event = BabyEvent()
@@ -296,28 +362,43 @@ class Game:
         # Check for win condition
         if not self.game_over and not self.won and (time.time() - self.start_time) >= self.WIN_TIME:
             self.won = True
+            # Play victory sound once when winning
+            if not self.victory_sound_played and self.victory_sound:
+                self.victory_sound.play()
+                self.victory_sound_played = True
         
         if self.won:
             # Draw the current background
             surface.blit(self.get_current_background(), (0, 0))
             
-            # Draw semi-transparent gray overlay strip in the middle
-            overlay_height = 150
-            overlay_y = (WINDOW_HEIGHT - overlay_height) // 2
-            overlay = pygame.Surface((WINDOW_WIDTH, overlay_height), pygame.SRCALPHA)
-            overlay.fill((100, 100, 100, 128))
-            surface.blit(overlay, (0, overlay_y))
+            # Add darkening overlay
+            dark_overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+            dark_overlay.fill((0, 0, 0, 250))  # Black with 90% opacity
+            surface.blit(dark_overlay, (0, 0))
             
-            # Draw winner text in two lines with yellow color
-            font_bold = pygame.font.Font(None, 72)
-            font_italic = pygame.font.Font(None, 48)
-            
-            # First line: "WINNER!"
-            text1 = font_bold.render("WINNER!", True, (255, 255, 0))  # Yellow color
-            text1_rect = text1.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 - 30))
-            
-            # Draw both text lines
-            surface.blit(text1, text1_rect)
+            # Get and draw video frame if available
+            frame = self.get_video_frame()
+            if frame is not None:
+                # Create a copy of the frame with transparency
+                transparent_surface = pygame.Surface(frame.get_size(), pygame.SRCALPHA)
+                transparent_surface.fill((255, 255, 255, 128))  # White with 50% transparency
+                frame.blit(transparent_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                # Draw the video frame
+                surface.blit(frame, self.video_rect)
+            else:
+                # Fallback if video fails
+                # Draw semi-transparent gray overlay strip in the middle
+                overlay_height = 150
+                overlay_y = (WINDOW_HEIGHT - overlay_height) // 2
+                overlay = pygame.Surface((WINDOW_WIDTH, overlay_height), pygame.SRCALPHA)
+                overlay.fill((100, 100, 100, 128))
+                surface.blit(overlay, (0, overlay_y))
+                
+                # Draw winner text
+                font_bold = pygame.font.Font(None, 72)
+                text = font_bold.render("WINNER!", True, (255, 255, 0))
+                text_rect = text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2))
+                surface.blit(text, text_rect)
             
             # Draw retry button
             self.retry_button.draw(surface)
