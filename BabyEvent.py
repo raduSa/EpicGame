@@ -10,10 +10,14 @@ class BabyEvent:
         self.active = False
         self.room = random.randint(0, 3)
         allowed_positions = {
-                0: [(300, 450), (300, 450)],
-                1: [(200, 100), (250, 120)],
-                2: [(300, 100), (350, 120)],
-                3: [(400, 100), (450, 120)]
+               0: [(int(WINDOW_WIDTH * 0.2), int(WINDOW_HEIGHT * 0.5)),
+                    (int(WINDOW_WIDTH * 0.8), int(WINDOW_HEIGHT * 0.6))],
+                1: [(int(WINDOW_WIDTH * 0.25), int(WINDOW_HEIGHT * 0.5)),
+                    (int(WINDOW_WIDTH * 0.75), int(WINDOW_HEIGHT * 0.5))],
+                2: [(int(WINDOW_WIDTH * 0.1), int(WINDOW_HEIGHT * 0.5)),
+                    (int(WINDOW_WIDTH * 0.3), int(WINDOW_HEIGHT * 0.87))],
+                3: [(int(WINDOW_WIDTH * 0.9), int(WINDOW_HEIGHT * 0.8)),
+                    (int(WINDOW_WIDTH * 0.1), int(WINDOW_HEIGHT * 0.5))]
             }
             # Dacă sunt poziții definite pentru camera curentă, alege una aleatoriu
         if self.room in allowed_positions:
