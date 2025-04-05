@@ -38,11 +38,13 @@ class BabyEvent:
         self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
         self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
         self.next_spawn_time = time.time() + random.uniform(2, 5)  # Spawn between 2-5 seconds
+        self.active_time = None
         
     def update(self):
         current_time = time.time()
         if not self.active and current_time >= self.next_spawn_time:
             self.active = True
+            self.active_time = current_time
             
     def draw(self, surface, current_room):
         if self.active and self.room == current_room:
@@ -53,7 +55,15 @@ class BabyEvent:
         if not self.active or self.room != current_room:
             return False
         distance = ((pos[0] - self.x) ** 2 + (pos[1] - self.y) ** 2) ** 0.5
-        return distance <= CIRCLE_RADIUS
+        if distance <= CIRCLE_RADIUS:
+            self.reset()
+            return True
+        return False
+        
+    def check_timeout(self):
+        if self.active and time.time() - self.active_time > 5:  # 5 seconds timeout
+            return True
+        return False
 
 class Button:
     def __init__(self, x, y, width, height, text):
@@ -85,6 +95,7 @@ class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
         self.rooms = [RED, BLUE, GREEN, PURPLE]
+        self.game_over = False
         
         # Create navigation buttons
         left_x = BUTTON_MARGIN
@@ -107,6 +118,9 @@ class Game:
         self.right_button.set_enabled(self.current_room < len(self.rooms) - 1)
         
     def handle_click(self, pos):
+        if self.game_over:
+            return
+            
         if self.left_button.is_clicked(pos):
             self.current_room -= 1
             self.update_button_states()
@@ -117,6 +131,32 @@ class Game:
             self.baby_event.reset()
             
     def draw(self, surface):
+        if self.game_over:
+            # Keep the room background
+            surface.fill(self.rooms[self.current_room])
+            
+            # Draw semi-transparent gray overlay
+            overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((100, 100, 100, 128))  # Gray with 50% opacity
+            surface.blit(overlay, (0, 0))
+            
+            # Draw game over text in two lines
+            font_bold = pygame.font.Font(None, 72)
+            font_italic = pygame.font.Font(None, 48)
+            
+            # First line: "GAME OVER"
+            text1 = font_bold.render("GAME OVER", True, (255, 0, 0))
+            text1_rect = text1.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 - 30))
+            
+            # Second line: "the baby has died" in italics
+            text2 = font_italic.render("the baby has died", True, (255, 0, 0))
+            text2_rect = text2.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 + 30))
+            
+            # Draw both text lines
+            surface.blit(text1, text1_rect)
+            surface.blit(text2, text2_rect)
+            return
+            
         # Fill background with current room color
         surface.fill(self.rooms[self.current_room])
         
@@ -133,6 +173,10 @@ class Game:
         # Update and draw baby event
         self.baby_event.update()
         self.baby_event.draw(surface, self.current_room)
+        
+        # Check for timeout
+        if self.baby_event.check_timeout():
+            self.game_over = True
 
 def main():
     game = Game()
