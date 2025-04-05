@@ -2,15 +2,51 @@ from constants import *
 import random
 import time
 
+# Define hardcoded events with their properties
+PREDEFINED_EVENTS = [
+    {
+        "name": "Wash Dishes",
+        "room": 1,  # Kitchen
+        "x": WINDOW_WIDTH * (0.3),
+        "y": WINDOW_HEIGHT * (7/12),
+        "radius": CIRCLE_RADIUS
+    },
+    {
+        "name": "Wash Toielet",
+        "room": 0,  # Bathroom
+        "x": WINDOW_WIDTH * (5/12),
+        "y": WINDOW_HEIGHT * (4/6),
+        "radius": CIRCLE_RADIUS
+    },
+    {
+        "name": "Make Bed",
+        "room": 2,  # Bedroom
+        "x": WINDOW_WIDTH * (1/2),
+        "y": WINDOW_HEIGHT * (4/6),
+        "radius": CIRCLE_RADIUS * 1.2  # Slightly larger button
+    },
+    {
+        "name": "Fix Lightbulb",
+        "room": 3,  # Living Room
+        "x": WINDOW_WIDTH * (0.45),
+        "y": WINDOW_HEIGHT * (1/6),
+        "radius": CIRCLE_RADIUS
+    }
+]
+
 class PlayerEvent:
     def __init__(self):
         self.reset()
         
     def reset(self):
         self.active = False
-        self.room = random.randint(0, 3)
-        self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
-        self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
+        # Choose a random event from our predefined list
+        self.current_event = random.choice(PREDEFINED_EVENTS)
+        self.room = self.current_event["room"]
+        self.x = self.current_event["x"]
+        self.y = self.current_event["y"]
+        self.radius = self.current_event["radius"]
+        self.name = self.current_event["name"]
         self.next_spawn_time = time.time() + random.uniform(2, 5)
         self.active_time = None
         self.clicks = 0
@@ -28,24 +64,30 @@ class PlayerEvent:
     def draw(self, surface, current_room):
         if self.active and self.room == current_room:
             # Draw the black circle
-            pygame.draw.circle(surface, BLACK, (self.x, self.y), CIRCLE_RADIUS)
+            pygame.draw.circle(surface, BLACK, (self.x, self.y), self.radius)
             
             # Draw progress bar above the circle
             progress_width = (self.clicks / PLAYER_EVENT_CLICKS_REQUIRED) * PROGRESS_BAR_WIDTH
             progress_rect = pygame.Rect(
                 self.x - PROGRESS_BAR_WIDTH//2,
-                self.y - CIRCLE_RADIUS - PROGRESS_BAR_HEIGHT - 5,
+                self.y - self.radius - PROGRESS_BAR_HEIGHT - 5,
                 progress_width,
                 PROGRESS_BAR_HEIGHT
             )
             pygame.draw.rect(surface, PROGRESS_BAR_COLOR, progress_rect)
             pygame.draw.rect(surface, BLACK, progress_rect, 1)  # Border
             
+            # Draw the event name above the progress bar
+            font = pygame.font.Font(None, 24)
+            text = font.render(self.name, True, BLACK)
+            text_rect = text.get_rect(center=(self.x, self.y - self.radius - PROGRESS_BAR_HEIGHT - 20))
+            surface.blit(text, text_rect)
+            
     def is_clicked(self, pos, current_room):
         if not self.active or self.room != current_room:
             return False
         distance = ((pos[0] - self.x) ** 2 + (pos[1] - self.y) ** 2) ** 0.5
-        if distance <= CIRCLE_RADIUS:
+        if distance <= self.radius:
             self.clicks += 1
             if self.clicks >= PLAYER_EVENT_CLICKS_REQUIRED:
                 self.completed = True
