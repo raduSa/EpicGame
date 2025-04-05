@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import time
+import os
 
 # Initialize Pygame
 pygame.init()
@@ -157,7 +158,22 @@ class Button:
 class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
-        self.rooms = [RED, BLUE, GREEN, PURPLE]
+        
+        # Load room backgrounds
+        self.room_backgrounds = []
+        room_images = ["baie.png", "bucatarie.png", "dormitor.png", "living.PNG"]
+        for img_name in room_images:
+            try:
+                img = pygame.image.load(os.path.join("HACK", img_name))
+                # Scale image to fit the window
+                img = pygame.transform.scale(img, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.room_backgrounds.append(img)
+            except:
+                print(f"Warning: Could not load image {img_name}")
+                # Fallback to white background if image fails to load
+                self.room_backgrounds.append(pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT)))
+                self.room_backgrounds[-1].fill(WHITE)
+        
         self.game_over = False
         self.game_over_cause = None  # "baby" or "task"
         
@@ -168,6 +184,13 @@ class Game:
         
         self.left_button = Button(left_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT, "Left")
         self.right_button = Button(right_x, button_y, BUTTON_WIDTH, BUTTON_HEIGHT, "Right")
+        
+        # Create retry button
+        retry_width = 150
+        retry_height = 50
+        retry_x = (WINDOW_WIDTH - retry_width) // 2
+        retry_y = WINDOW_HEIGHT - retry_height - BUTTON_MARGIN
+        self.retry_button = Button(retry_x, retry_y, retry_width, retry_height, "Retry")
         
         # Create events
         self.baby_event = BabyEvent()
@@ -180,27 +203,45 @@ class Game:
         # Left button is disabled in first room
         self.left_button.set_enabled(self.current_room > 0)
         # Right button is disabled in last room
-        self.right_button.set_enabled(self.current_room < len(self.rooms) - 1)
+        self.right_button.set_enabled(self.current_room < len(self.room_backgrounds) - 1)
+        
+    def reset_game(self):
+        self.current_room = 0
+        self.game_over = False
+        self.game_over_cause = None
+        self.baby_event = BabyEvent()
+        self.player_event = PlayerEvent()
+        self.update_button_states()
         
     def handle_click(self, pos):
         if self.game_over:
+            if self.retry_button.is_clicked(pos):
+                self.reset_game()
             return
             
         if self.left_button.is_clicked(pos):
-            self.current_room -= 1
-            self.update_button_states()
+            self.move_left()
         elif self.right_button.is_clicked(pos):
-            self.current_room += 1
-            self.update_button_states()
+            self.move_right()
         elif self.baby_event.is_clicked(pos, self.current_room):
             self.baby_event.reset()
         elif self.player_event.is_clicked(pos, self.current_room):
             pass  # Progress is handled in the PlayerEvent class
             
+    def move_left(self):
+        if self.current_room > 0:  # Only move if not in first room
+            self.current_room -= 1
+            self.update_button_states()
+            
+    def move_right(self):
+        if self.current_room < len(self.room_backgrounds) - 1:  # Only move if not in last room
+            self.current_room += 1
+            self.update_button_states()
+            
     def draw(self, surface):
         if self.game_over:
             # Keep the room background
-            surface.fill(self.rooms[self.current_room])
+            surface.blit(self.room_backgrounds[self.current_room], (0, 0))
             
             # Draw semi-transparent gray overlay strip in the middle
             overlay_height = 150  # Height of the overlay strip
@@ -229,16 +270,13 @@ class Game:
             # Draw both text lines
             surface.blit(text1, text1_rect)
             surface.blit(text2, text2_rect)
+            
+            # Draw retry button
+            self.retry_button.draw(surface)
             return
             
-        # Fill background with current room color
-        surface.fill(self.rooms[self.current_room])
-        
-        # Draw room number
-        font = pygame.font.Font(None, 72)
-        text = font.render(f"Room {self.current_room + 1}", True, BLACK)
-        text_rect = text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2))
-        surface.blit(text, text_rect)
+        # Draw room background
+        surface.blit(self.room_backgrounds[self.current_room], (0, 0))
         
         # Draw navigation buttons
         self.left_button.draw(surface)
@@ -271,6 +309,11 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left click
                     game.handle_click(event.pos)
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    game.move_left()
+                elif event.key == pygame.K_RIGHT:
+                    game.move_right()
         
         # Draw everything
         game.draw(screen)
