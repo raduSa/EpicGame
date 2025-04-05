@@ -5,10 +5,48 @@ import os
 
 class BabyEvent:
     def __init__(self):
+        # Initialize pygame mixer if not already initialized
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+            
         # Load all baby textures
         self.textures = {}
+        self.sounds = {}
+        self.next_sound = None  # Store the sound to be played when baby appears
         self.load_textures()
+        self.load_sounds()
         self.reset()
+        
+    def load_sounds(self):
+        # Define sound mapping for each room and position
+        sound_mapping = {
+            0: {  # Bathroom
+                (int(WINDOW_WIDTH * 0.2), int(WINDOW_HEIGHT * 0.4)): "cutit-lama.wav",
+                (int(WINDOW_WIDTH * 0.8), int(WINDOW_HEIGHT * 0.55)): "sunet_apa_final.wav"
+            },
+            1: {  # Kitchen
+                (int(WINDOW_WIDTH * 0.45), int(WINDOW_HEIGHT * 0.4)): "cutit-lama.wav",
+                (int(WINDOW_WIDTH * 0.7), int(WINDOW_HEIGHT * 0.45)): "foc.wav"
+            },
+            2: {  # Bedroom
+                (int(WINDOW_WIDTH * 0.1), int(WINDOW_HEIGHT * 0.5)): "geam_spart.wav",
+                (int(WINDOW_WIDTH * 0.3), int(WINDOW_HEIGHT * 0.8)): "fantoma.wav"
+            },
+            3: {  # Living Room
+                (int(WINDOW_WIDTH * 0.9), int(WINDOW_HEIGHT * 0.75)): "electric.wav"
+            }
+        }
+        
+        # Load each sound
+        for room in sound_mapping:
+            self.sounds[room] = {}
+            for pos, sound_name in sound_mapping[room].items():
+                try:
+                    sound = pygame.mixer.Sound(os.path.join("HACK", "sunet", sound_name))
+                    self.sounds[room][pos] = sound
+                except:
+                    print(f"Warning: Could not load sound {sound_name}")
+                    self.sounds[room][pos] = None
         
     def load_textures(self):
         # Define texture mapping for each room and position
@@ -36,8 +74,8 @@ class BabyEvent:
             for pos, img_name in texture_mapping[room].items():
                 try:
                     img = pygame.image.load(os.path.join("HACK", img_name))
-                    # Scale image to 3 times the circle size
-                    size = CIRCLE_RADIUS * 2 * 4  # Multiplied by 3 for larger size
+                    # Scale image to fit the circle size
+                    size = CIRCLE_RADIUS * 2 * 4  # Multiplied by 4 for larger size
                     img = pygame.transform.scale(img, (size, size))
                     self.textures[room][pos] = img
                 except:
@@ -62,10 +100,13 @@ class BabyEvent:
             pos = random.choice(allowed_positions[self.room])
             self.x, self.y = pos
             self.current_texture = self.textures[self.room].get(pos)
+            # Store the sound to be played when the baby appears
+            self.next_sound = self.sounds[self.room].get(pos)
         else:
             self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
             self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
             self.current_texture = None
+            self.next_sound = None
             
         self.next_spawn_time = time.time() + random.uniform(2, 5)
         self.active_time = None
@@ -75,6 +116,9 @@ class BabyEvent:
         if not self.active and current_time >= self.next_spawn_time:
             self.active = True
             self.active_time = current_time
+            # Play the sound when the baby appears
+            if self.next_sound:
+                self.next_sound.play()
             
     def draw(self, surface, current_room):
         if self.active and self.room == current_room:
