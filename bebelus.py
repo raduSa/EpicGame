@@ -106,7 +106,7 @@ class Game:
     def __init__(self):
         self.current_room = 0  # Start in first room
         self.start_time = time.time()  # Add start time for win condition
-        self.WIN_TIME = 10  # Time in seconds to win
+        self.WIN_TIME = 100  # Time in seconds to win
         self.won = False  # Add win state
         self.victory_video = None
         self.video_rect = None

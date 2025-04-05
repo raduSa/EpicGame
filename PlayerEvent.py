@@ -47,7 +47,7 @@ class PlayerEvent:
         self.y = self.current_event["y"]
         self.radius = self.current_event["radius"]
         self.name = self.current_event["name"]
-        self.next_spawn_time = time.time() + random.uniform(2, 5)
+        self.next_spawn_time = time.time() + random.uniform(1, 3)
         self.active_time = None
         self.clicks = 0
         self.completed = False
