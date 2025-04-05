@@ -61,7 +61,32 @@ class PlayerEvent:
         elif self.completed and current_time >= self.grace_period_end:
             self.reset()
             
+    def draw_current_event_name(self, surface):
+        # Create a semi-transparent background for the text
+        text_bg = pygame.Surface((500, 60), pygame.SRCALPHA)  # Increased size
+        text_bg.fill((0, 0, 0, 128))  # Black with 50% opacity
+        
+        # Draw the background
+        surface.blit(text_bg, (WINDOW_WIDTH - 320, 10))  # Adjusted position
+        
+        # Draw the text with larger font
+        font = pygame.font.Font(None, 36)  # Increased font size
+        
+        # Choose text based on event state
+        if self.active:
+            text = font.render(f"Current Task: {self.name}", True, WHITE)
+        elif self.completed:
+            text = font.render("Task Completed!", True, WHITE)
+        else:
+            text = font.render("Nothing to do :(", True, WHITE)
+            
+        text_rect = text.get_rect(topright=(WINDOW_WIDTH - 20, 20))
+        surface.blit(text, text_rect)
+            
     def draw(self, surface, current_room):
+        # Draw the current event name in the top right corner
+        self.draw_current_event_name(surface)
+        
         if self.active and self.room == current_room:
             # Draw the black circle
             pygame.draw.circle(surface, BLACK, (self.x, self.y), self.radius)

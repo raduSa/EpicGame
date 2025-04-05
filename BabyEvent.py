@@ -9,10 +9,22 @@ class BabyEvent:
     def reset(self):
         self.active = False
         self.room = random.randint(0, 3)
-        self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
-        self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
-        self.next_spawn_time = time.time() + random.uniform(2, 5)  # Spawn between 2-5 seconds
+        allowed_positions = {
+                0: [(300, 450), (300, 450)],
+                1: [(200, 100), (250, 120)],
+                2: [(300, 100), (350, 120)],
+                3: [(400, 100), (450, 120)]
+            }
+            # Dacă sunt poziții definite pentru camera curentă, alege una aleatoriu
+        if self.room in allowed_positions:
+            self.x, self.y = random.choice(allowed_positions[self.room])
+        else:
+            # Fallback în cazul în care nu sunt poziții definite
+            self.x = random.randint(CIRCLE_RADIUS, WINDOW_WIDTH - CIRCLE_RADIUS)
+            self.y = random.randint(CIRCLE_RADIUS, WINDOW_HEIGHT - BUTTON_HEIGHT - BUTTON_MARGIN - CIRCLE_RADIUS)
+        self.next_spawn_time = time.time() + random.uniform(2, 5)
         self.active_time = None
+
         
     def update(self):
         current_time = time.time()
