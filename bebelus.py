@@ -39,7 +39,7 @@ class StartScreen:
         self.title_font = pygame.font.Font(None, 72)
         self.text_font = pygame.font.Font(None, 45)
         
-        self.title = self.title_font.render("Baby Hazard", True, WHITE)
+        self.title = self.title_font.render("Demon Diapers", True, WHITE)
         self.title_rect = self.title.get_rect(center=(WINDOW_WIDTH//2, 100))
         
         # Instructions text
