@@ -41,14 +41,6 @@ Mama se află într-o luptă contracronometru pentru a-și proteja bebelușul, p
 
 ---
 
-## **Începe aventura!**
-1. **Lansează** jocul prin rularea fișierului `main.py`.  
-2. **Așteaptă** să se încarce meniul principal.  
-3. **Apasă** butonul „Start” pentru a intra în rolul mamei.  
-4. **Protejează** bebelușul și îndeplinește task-urile casei!  
-
----
-
 ## **Concluzie**
 „Mama vs. Bebelușul Posedat” este un joc ce combină **horror-ul** cu **strategia** și **managementul timpului**, oferind o experiență inedită și tensionată. Vei intra în pielea unui personaj unic, gata să facă orice pentru a-și apăra copilul, în timp ce jonglează cu sarcinile zilnice care nu pot fi ignorate.
 
