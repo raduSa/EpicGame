@@ -45,6 +45,7 @@ class StartScreen:
         # Instructions text
         self.instructions = [
             "Keep the baby safe and the house clean",
+            "The baby is VERY fragile",
             "Click to interact with the environment",
             "Use arrow keys or buttons to move between rooms",
             "Press ESC to exit the game",
@@ -112,7 +113,12 @@ class Game:
         self.video_rect = None
         self.last_frame = None
         self.frame_time = 0
-        self.victory_sound_played = False  # Track if victory sound has been played
+        self.victory_sound_played = False
+        self.background_sound = None
+        self.current_volume = 0.0
+        self.target_volume = 0.0
+        self.fade_duration = 5.0  # Duration of fade in seconds
+        self.fade_start_time = 0.0
         
         try:
             # Initialize video capture
@@ -141,6 +147,14 @@ class Game:
         except Exception as e:
             print(f"Warning: Could not load victory sound: {e}")
             self.victory_sound = None
+            
+        try:
+            # Load background sound
+            self.background_sound = pygame.mixer.Sound(os.path.join("HACK", "sunet", "eerie_noise.wav"))
+            self.background_sound.set_volume(0.0)  # Start with no volume
+        except Exception as e:
+            print(f"Warning: Could not load background sound: {e}")
+            self.background_sound = None
         
         # Initialize empty containers for backgrounds
         self.default_backgrounds = []
@@ -242,6 +256,28 @@ class Game:
         # Right button is disabled in last room
         self.right_button.set_enabled(self.current_room < len(self.default_backgrounds) - 1)
         
+    def update_sound_volume(self):
+        if not self.background_sound:
+            return
+            
+        current_time = time.time()
+        elapsed = current_time - self.fade_start_time
+        
+        if elapsed < self.fade_duration:
+            # Calculate new volume based on fade progress using cubic easing
+            progress = elapsed / self.fade_duration
+            # Cubic easing in/out - steeper at beginning and end
+            if progress < 0.5:
+                progress = 4 * progress * progress * progress
+            else:
+                progress = 1 - 4 * (1 - progress) * (1 - progress) * (1 - progress)
+            new_volume = self.current_volume + (self.target_volume - self.current_volume) * progress
+            self.background_sound.set_volume(new_volume)
+        else:
+            # Fade complete, set final volume
+            self.background_sound.set_volume(self.target_volume)
+            self.current_volume = self.target_volume
+
     def update_haunted_textures(self):
         current_time = time.time() - self.start_time
         
@@ -257,6 +293,12 @@ class Game:
                 haunted_event = pygame.image.load(os.path.join("HACK", "pat_dezordonat_haunted.png"))
                 haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.event_backgrounds["Make Bed"] = haunted_event
+                
+                # Start background sound with fade in
+                if self.background_sound:
+                    self.background_sound.play(-1)  # -1 means loop indefinitely
+                    self.target_volume = 0.1
+                    self.fade_start_time = time.time()
             except Exception as e:
                 print(f"Warning: Could not load haunted bedroom textures: {e}")
             self.haunted_changes_applied[20] = True
@@ -271,6 +313,11 @@ class Game:
                 haunted_event = pygame.image.load(os.path.join("HACK", "bucatarie_vase_haunted.png"))
                 haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.event_backgrounds["Wash Dishes"] = haunted_event
+                
+                # Increase background sound volume with fade
+                if self.background_sound:
+                    self.target_volume = 0.2
+                    self.fade_start_time = time.time()
             except Exception as e:
                 print(f"Warning: Could not load haunted kitchen textures: {e}")
             self.haunted_changes_applied[40] = True
@@ -285,6 +332,11 @@ class Game:
                 haunted_event = pygame.image.load(os.path.join("HACK", "lampa_sparta_haunted.png"))
                 haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.event_backgrounds["Fix Lightbulb"] = haunted_event
+                
+                # Increase background sound volume with fade
+                if self.background_sound:
+                    self.target_volume = 0.4
+                    self.fade_start_time = time.time()
             except Exception as e:
                 print(f"Warning: Could not load haunted living room textures: {e}")
             self.haunted_changes_applied[60] = True
@@ -299,16 +351,33 @@ class Game:
                 haunted_event = pygame.image.load(os.path.join("HACK", "baie_murdara_haunted.png"))
                 haunted_event = pygame.transform.scale(haunted_event, (WINDOW_WIDTH, WINDOW_HEIGHT))
                 self.event_backgrounds["Wash Toielet"] = haunted_event
+                
+                # Increase background sound volume with fade
+                if self.background_sound:
+                    self.target_volume = 0.9
+                    self.fade_start_time = time.time()
             except Exception as e:
                 print(f"Warning: Could not load haunted bathroom textures: {e}")
             self.haunted_changes_applied[80] = True
-                
+            
+        # Update sound volume for smooth transitions
+        self.update_sound_volume()
+        
     def reset_game(self):
         self.current_room = 0
         self.game_over = False
         self.game_over_cause = None
         self.won = False
         self.victory_sound_played = False
+        self.current_volume = 0.0
+        self.target_volume = 0.0
+        if self.background_sound:
+            # Fade out the sound
+            self.target_volume = 0.0
+            self.fade_start_time = time.time()
+            # Wait for fade to complete before stopping
+            pygame.time.wait(int(self.fade_duration * 1000))
+            self.background_sound.stop()
         self.start_time = time.time()
         self.haunted_changes_applied = {20: False, 40: False, 60: False, 80: False}
         self.last_frame = None
